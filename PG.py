@@ -4,10 +4,10 @@
 policy Gradient
 """
 
-import gym
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 import torch.optim as optim
 
 # 定义全连接神经网络
@@ -37,7 +37,9 @@ class PolicyGradient:
         
     # 选择动作
     def select_action(self, state):
+        # 转成Variable形式
         probs = self.model(Variable(state).to(device))
+        # .multinomial()对数值进行采样
         action = probs.multinomial().data
         prob = probs[:, action[0,0]].view(1, -1)
         log_prob = prob.log()
@@ -46,12 +48,12 @@ class PolicyGradient:
         return action[0], log_prob, entropy
     
     # 更新
-    def update(self, rewards, log_probs, entropies, gamma):
+    def update(self, rewards, log_probs, entropies):
         # R = 0 tensor类型 一行一列
         R = torch.zeros(1, 1)
         loss = 0
         for i in reversed(range(len(rewards))):
-            R = gamma * R + rewards[i]
+            R = 0.99 * R + rewards[i]
             loss = loss - (log_probs[i]*(Variable(R).expand_as(log_probs[i])).to(device)).sum() - (0.0001*entropies[i].to(device)).sum()
         loss = loss / len(rewards)
         

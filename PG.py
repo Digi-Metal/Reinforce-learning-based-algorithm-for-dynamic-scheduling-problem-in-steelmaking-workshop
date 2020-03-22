@@ -25,36 +25,37 @@ class Net(nn.Module):
         x = F.relu(self.l1(x))
         action_scores = self.l2(x)
         # 对张量用softmax函数, 得到是0-1之间的值
-        return F.softmax(action_scores)
+        return F.softmax(action_scores, dim=1)
 
 
 class PolicyGradient:
-    def __init__(self, state_dim, hidden_dim, action_dim):
+    def __init__(self, state_dim, hidden_dim, action_dim, device):
+        self.device = device
         # 实例化神经网络 to(device)决定使用GPU或者CPU, 实例化时会定义
-        self.model = Net(state_dim, hidden_dim, action_dim).to(device)
+        self.model = Net(state_dim, hidden_dim, action_dim).to(self.device)
         # optimizer:优化器, lr:learning_rate
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
         
     # 选择动作
     def select_action(self, state):
         # 转成Variable形式
-        probs = self.model(Variable(state).to(device))
-        # .multinomial()对数值进行采样
-        action = probs.multinomial().data
+        probs = self.model(Variable(state).to(self.device))
+        # multinomial()从probs里面按概率取值, probs里面元素代表权重, 元素值越大越容易被取到
+        action = probs.multinomial(1).data
         prob = probs[:, action[0,0]].view(1, -1)
         log_prob = prob.log()
         entropy = - (probs*probs.log()).sum()
 
         return action[0], log_prob, entropy
     
-    # 更新
+    # 更新: rewards,log_probs,entropies是每运行一次里所有的reward,log_prob,entropie的集合
     def update(self, rewards, log_probs, entropies):
         # R = 0 tensor类型 一行一列
         R = torch.zeros(1, 1)
         loss = 0
         for i in reversed(range(len(rewards))):
             R = 0.99 * R + rewards[i]
-            loss = loss - (log_probs[i]*(Variable(R).expand_as(log_probs[i])).to(device)).sum() - (0.0001*entropies[i].to(device)).sum()
+            loss = loss - (log_probs[i]*(Variable(R).expand_as(log_probs[i])).to(self.device)).sum() - (0.0001*entropies[i].to(self.device)).sum()
         loss = loss / len(rewards)
         
         # 优化网络
@@ -64,13 +65,13 @@ class PolicyGradient:
         #nn.utils.clip_grad_norm(self.model.parameters(), 40)
         self.optimizer.step()
         
-    def save(self, i):
+    def save(self, directory, i):
         torch.save(self.model.state_dict(), directory + str(i) + '.pth')
         print("====================================")
         print("Model has been saved...")
         print("====================================")
     
-    def load(self, i):
+    def load(self, directory, i):
         self.model.load_state_dict(torch.load(directory + str(i) + '.pth'))
         print("====================================")
         print("model has been loaded...")

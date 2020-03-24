@@ -38,9 +38,10 @@ class PolicyGradient:
         
     # 选择动作
     def select_action(self, state):
-        # 转成Variable形式
+        # model(state)指将state输入神经网络(model)里面
+        # 转成Variable形式, probs输出size为action_dim, 值为代表权重的小数
         probs = self.model(Variable(state).to(self.device))
-        # multinomial()从probs里面按概率取值, probs里面元素代表权重, 元素值越大越容易被取到
+        # multinomial()从probs里面按概率取值, probs里面元素代表权重, 元素值越大越容易被取到, 即取权重大的值的下标
         action = probs.multinomial(1).data
         prob = probs[:, action[0,0]].view(1, -1)
         log_prob = prob.log()

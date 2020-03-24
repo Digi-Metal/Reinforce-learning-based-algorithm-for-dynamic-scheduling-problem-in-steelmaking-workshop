@@ -4,7 +4,6 @@
 deep deterministic policy gradient
 """
 
-import argparse
 from itertools import count
 
 import os, random
@@ -16,10 +15,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Normal
-
+'''
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default = 'train', type = str) # mode = 'train' or 'test'
-parser.add_argument("--env_name", default = "MountainCarContinuous-v0") # 游戏名
+parser.add_argument("--env_name", default = "Pendulum-v0") # 游戏名
 parser.add_argument('--tau',  default = 0.005, type = float) # target 平滑系数
 parser.add_argument('--target_update_interval', default = 1, type = int)
 parser.add_argument('--test_iteration', default = 2000, type = int) # 测试时走多少步
@@ -116,7 +115,6 @@ class DDPG(object):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic_optimizer = optim.Adam(self.critic.parameters(), args.learning_rate)
         self.replay_buffer = Replay_buffer()
-        #self.writer = SummaryWriter(directory)
         self.num_critic_update_iteration = 0
         self.num_actor_update_iteration = 0
         self.num_training = 0
@@ -146,7 +144,7 @@ class DDPG(object):
 
             # Compute critic loss
             critic_loss = F.mse_loss(current_Q, target_Q)
-            #self.writer.add_scalar('Loss/critic_loss', critic_loss, global_step=self.num_critic_update_iteration)
+            
             # Optimize the critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
@@ -154,7 +152,6 @@ class DDPG(object):
 
             # Compute actor loss
             actor_loss = -self.critic(state, self.actor(state)).mean()
-            #self.writer.add_scalar('Loss/actor_loss', actor_loss, global_step=self.num_actor_update_iteration)
 
             # Optimize the actor
             self.actor_optimizer.zero_grad()
@@ -186,25 +183,29 @@ class DDPG(object):
         print("model has been loaded...")
         print("====================================")
     
-
+'''
 # use the cuda
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device == 'cuda':
     print('using the GPU...')
 
 script_name = os.path.basename(__file__) # return the name of this script
-env = gym.make(args.env_name).unwrapped
-
+env = gym.make('Pendulum-v0').unwrapped
+'''
 if args.seed:
     env.seed(args.random_seed)
     torch.manual_seed(args.random_seed)
     np.random.seed(args.random_seed)
-
+'''
 state_dim = env.observation_space.shape[0]
+print(state_dim)
 action_dim = env.action_space.shape[0]
+print(action_dim)
 max_action = float(env.action_space.high[0])
+print(max_action)
 min_Val = torch.tensor(1e-7).float().to(device) # min value
-
+print(min_Val)
+'''
 # maybe you want to modify the directory to save
 directory = './exp_ddpg_' + args.env_name +'./'
 
@@ -270,17 +271,11 @@ def main(agent):
             
     else:
         raise NameError("mode wrong!!!")
-
+'''
 '''
 查看tensorboard: 中终端输入绝对路径, eg:
 tensorboard --logdir D:\MyNetWork\DDPG_Pytorch\exp_ddpg_Pendulum-v0
 '''
 if __name__ == '__main__':
-    try:
-        agent = DDPG(state_dim, action_dim, max_action)
-        main(agent)
-    except KeyboardInterrupt as results:
-        print('programe stop...')
-    finally:
-        #agent.writer.close()
-        print('saving weight...')
+    agent = DDPG(state_dim, action_dim, max_action)
+    main(agent)

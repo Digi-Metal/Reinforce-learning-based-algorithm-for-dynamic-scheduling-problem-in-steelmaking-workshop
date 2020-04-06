@@ -11,7 +11,7 @@ background.py
 
 import numpy as np
 
-# 一个工业流程 technological process
+# 一个工业流程
 class TechnologicalProcess:
     def __init__(self, machine):
         # 一个流程拥有的设备数

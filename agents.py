@@ -85,21 +85,102 @@ class ProcessAgent(VanillaAgent):
         stateFront = state[: self.lastMachineNum]
         action = []
         for each in range(self.machineNum):
+            noZeroList = []
             # 设备不空闲或上一个流程没有job运行完的时候不动作
             if state[self.lastMachineNum+each] != 0 or sum(stateFront) == 0:
                 action.append(0)
             else:
                 # 设备空闲时有0.5概率动作, 从上一个流程里面选已经完成的job继续运行
                 if random.randint(0, 1) == 1:
-                    noZeroList = [n for n in range(self.lastMachineNum) if stateFront[n]>0 ]
-                    tempIndex = random.choice(noZeroList)
-                    action.append(tempIndex)
-                    # 每台设备决策后都会state更新
-                    stateFront[tempIndex] = 0
+                    # agent3不能选task1
+                    if self.processNum == 3:
+                        noZeroList = [n for n in range(self.lastMachineNum) if stateFront[n]>1]
+                        # 列表为空, 即没得选的时候, action为0
+                        if len(noZeroList) == 0:
+                            action.append(0)
+                        else:
+                            tempIndex = random.choice(noZeroList)
+                            action.append(tempIndex+1)
+                            stateFront[tempIndex] = 0
+                    # agent4不能选task1和task2, 只能选task3
+                    elif self.processNum == 4:
+                        noZeroList = [n for n in range(self.lastMachineNum) if stateFront[n]==3]
+                        # 列表为空, 即没得选的时候, action为0
+                        if len(noZeroList) == 0:
+                            action.append(0)
+                        else:
+                            tempIndex = random.choice(noZeroList)
+                            action.append(tempIndex+1)
+                            stateFront[tempIndex] = 0
+                    # 其它agent随便选
+                    else:
+                        noZeroList = [n for n in range(self.lastMachineNum) if stateFront[n]>0]
+                        tempIndex = random.choice(noZeroList)
+                        action.append(tempIndex+1)
+                        stateFront[tempIndex] = 0
                 else:
                     action.append(0)
         return action
 
+
+'''
+最后处理原料的agent, 继承父类
+
+state格式: list
+长度: agent2,3,4,5的machine数(定值)之和
+agent2,3,4部分元素取值: agent的machine的状态, 0是其他情况, taskNum是种类为taskNum的job运行完成
+agent5部分元素取值: 本agent的machine的状态, 0是空闲, 1是非空闲(工作中或工作结束但材料没运走或损坏)
+
+action格式: list, 长度为machine数量(定值)
+
+frontMachineSum = self.agent2MachineNum+self.agent3MachineNum+self.agent4MachineNum
+stateFront = state[:frontMachineSum]
+元素取值范围: 0+(stateFront下标+1),
+表示选择stateFront的Machine的材料进行加工(要求材料在lastAgent上已经完工), 0表示不动作
+'''
+class FinalAgent(VanillaAgent):
+    # 新增加一个Task的种类数
+    def __init__(self, processNum, machineNum, agent2MachineNum, agent3MachineNum, agent4MachineNum):
+        super().__init__(processNum, machineNum)
+        self.agent2MachineNum = agent2MachineNum
+        self.agent3MachineNum = agent3MachineNum
+        self.agent4MachineNum = agent4MachineNum
+        
+    # 随机算法决策
+    def SelectActionRandom(self, state):
+        frontMachineSum = self.agent2MachineNum+self.agent3MachineNum+self.agent4MachineNum
+        stateFront = state[:frontMachineSum]
+        action = []
+        for each in range(self.machineNum):
+            noZeroList = []
+            # 设备不空闲的时候不动作
+            if state[frontMachineSum+each] != 0 or sum(stateFront) == 0:
+                action.append(0)
+            else:
+                # 设备空闲时有0.5概率动作, 从之前流程里面选已经完成的job继续运行
+                if random.randint(0, 1) == 1:
+                    for index in range(frontMachineSum):
+                        # 从agent2里面选task1
+                        if index<self.agent2MachineNum and stateFront[index]==1:
+                            noZeroList.append(index)
+                        # 从agent3里面选task2
+                        elif self.agent2MachineNum<=index<(self.agent2MachineNum+self.agent3MachineNum) and stateFront[index]==2:
+                            noZeroList.append(index)
+                        # 从agent4里面选task3
+                        elif index>=(self.agent2MachineNum+self.agent3MachineNum) and stateFront[index]==3:
+                            noZeroList.append(index)
+                    if len(noZeroList) == 0:
+                        action.append(0)
+                    else:
+                        tempIndex = random.choice(noZeroList)
+                        action.append(tempIndex+1)
+                        # 每台设备决策后都会state更新
+                        stateFront[tempIndex] = 0
+                else:
+                    action.append(0)
+        return action
+        
+        
 
 # 测试程序
 def main():

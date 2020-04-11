@@ -68,7 +68,8 @@ class BarItem(pg.GraphicsObject):
                     p.drawRect(QtCore.QRectF(times,coord_left-self.gant_wide,1,2*self.gant_wide))
                 # job占用在设备时, 画白框
                 elif data[0] == 3:
-                    p.setBrush(pg.mkBrush('w'))
+                    p.setPen(pg.mkPen('b'))
+                    p.setBrush(pg.mkBrush('b'))
                     coord_left = gantPosition(eachprocess, each)
                     p.drawRect(QtCore.QRectF(times,coord_left-self.gant_wide,1,2*self.gant_wide))
         p.end()
@@ -102,6 +103,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.que_btn = QtWidgets.QPushButton("运行") # 创建一个按钮部件
         
         # 创建空白图形,用于放置甘特图
+        pg.setConfigOption('background', 'w') # 背景为白
         self.gant_widget = QtWidgets.QWidget() # 实例化widget部件作为甘特图部件
         self.gant_layout = QtWidgets.QGridLayout()
         self.gant_widget.setLayout(self.gant_layout)
@@ -147,15 +149,21 @@ if __name__ == '__main__':
     main()
 
 '''
+# 待改进: 
+Y轴要把数字换成设备号, 可以考虑隐藏y轴
+坐标轴分度值
+运输部分没有连线
+看看能不能搞个x轴拖动条
+
 # 在运输job时, 画线
 elif data[0] == 2 and data[-1] == 1:
-if data[1] == 1:
-p.setPen(pg.mkPen('r'))
-elif data[1] == 2:
-p.setPen(pg.mkPen('g'))
-elif data[1] == 3:
-p.setPen(pg.mkPen('y'))
-coord_left = gantPosition(eachprocess, data[2])
-coord_right = gantPosition(eachprocess+1, data[3])
-p.drawLine(QtCore.QPointF(1, coord_left), QtCore.QPointF(3, coord_right)).....
+    if data[1] == 1:
+        p.setPen(pg.mkPen('r'))
+    elif data[1] == 2:
+        p.setPen(pg.mkPen('g'))
+    elif data[1] == 3:
+        p.setPen(pg.mkPen('y'))
+    coord_left = gantPosition(eachprocess, data[2])
+    coord_right = gantPosition(eachprocess+1, data[3])
+    p.drawLine(QtCore.QPointF(1, coord_left), QtCore.QPointF(3, coord_right)).....
 '''

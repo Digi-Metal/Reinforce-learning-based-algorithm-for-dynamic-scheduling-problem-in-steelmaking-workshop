@@ -55,19 +55,22 @@ class BarItem(pg.GraphicsObject):
                 if data[0] == 1:
                     # 选颜色, task1为红, task2为黄, task1为绿
                     if data[1] == 1:
+                        p.setPen(pg.mkPen('r'))
                         p.setBrush(pg.mkBrush('r')) # 设置画刷颜色为红
                     elif data[1] == 2:
+                        p.setPen(pg.mkPen('g'))
                         p.setBrush(pg.mkBrush('g')) # 设置画刷颜色为绿
                     elif data[1] == 3:
-                        p.setBrush(pg.mkBrush('y')) # 设置画刷颜色为绿
-                    # 绘制箱子,格式:(a,b,c,d)为左上角xy坐标,右下角xy坐标
+                        p.setPen(pg.mkPen('y'))
+                        p.setBrush(pg.mkBrush('y')) # 设置画刷颜色为黄
+                    # 绘制箱子,格式:(a,b,c,d)为左下角xy坐标,向xy轴正方向占多少距离
                     coord_left = gantPosition(eachprocess, each)
-                    p.drawRect(QtCore.QRectF(times,coord_left+self.gant_wide,times+1,coord_left-self.gant_wide))
+                    p.drawRect(QtCore.QRectF(times,coord_left-self.gant_wide,1,2*self.gant_wide))
                 # job占用在设备时, 画白框
                 elif data[0] == 3:
                     p.setBrush(pg.mkBrush('w'))
                     coord_left = gantPosition(eachprocess, each)
-                    p.drawRect(QtCore.QRectF(times,coord_left+self.gant_wide,times+1,coord_left-self.gant_wide))
+                    p.drawRect(QtCore.QRectF(times,coord_left-self.gant_wide,1,2*self.gant_wide))
         p.end()
         
     # 不用管这个, 这个函数是pg.GraphicsObject类有关的
@@ -111,22 +114,37 @@ class MainUi(QtWidgets.QMainWindow):
         self.main_layout.addWidget(self.que_btn,0,2,1,1)
         self.main_layout.addWidget(self.gant_widget,1,0,3,3)
 
-    # 画甘特图
+    # 画一个t时刻的state的甘特图
     def plotGantGraph(self, states, times):
         item = BarItem(states, times)
         self.gant_plt.addItem(item, )  # 在绘图部件中添加甘特图项目
         self.gant_plt.showGrid(x=True, y=True)  # 设置绘图部件显示网格线
-        #self.gant_plt.setYRange(y_min,y_max)
+        self.gant_plt.setYRange(max=26,min=0)
         self.gant_plt.setLabel(axis='left', text='设备')  # 设置Y轴标签
         self.gant_plt.setLabel(axis='bottom', text='运行时间')  # 设置X轴标签
 
 
-if __name__ == '__main__':
+# 获取数据, 显示ui
+def main():
+    # 修改需要显示的文件名
+    filename = "record_2020_04_12_00_37_54"
+    
+    # 读取文件
+    ls = []
+    with open("record/" + filename + "/state_record.txt") as f:
+        for eachLine in f:
+            ls.append(eval(eachLine))
+    
+    # 画图
     app = QtWidgets.QApplication(sys.argv)
     gui = MainUi()
-    gui.plotGantGraph(states, env.count)
+    for each in range(len(ls)):
+        gui.plotGantGraph(ls[each], each)
     gui.show()
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()
 
 '''
 # 在运输job时, 画线

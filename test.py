@@ -6,6 +6,7 @@ test.py
 使用随机算法决策, 运行调度系统, 显示ui, 测试系统可行性
 """
 
+import copy
 from ui import *
 from utils import *
 from environment import *
@@ -21,12 +22,9 @@ processAgents = [agent1, agent2, agent3, agent4]
 
 env = Env() # 新建环境
 env.reset() # 环境重置
-env.recordState() # 记录初始化
+recordStates = [] # 记录各个时刻的states
+recordStates.append(str(env.envStates))
 recordActions = [] # 记录各个时刻的actions
-
-# 创建相关ui
-app = QtWidgets.QApplication(sys.argv)
-gui = MainUi()
 
 
 '''
@@ -41,7 +39,7 @@ for t(count):
 env的state和agent的state不一样, 使用前需要转换
 '''
 while True:
-    password = input("按回车继续:")
+    #password = input("按回车继续:")
     # t时刻遍历所有agent一次
     env.count += 1
     tempActions = []
@@ -50,9 +48,10 @@ while True:
     state = toInitialAgentState(env) # 环境state转换成agent的state
     action = agent0.SelectActionRandom(state) # 选择动作
     # 环境反馈
-    done = env.initialStep(agent0, action)
+    states, done = env.initialStep(agent0, action)
     reward = -env.count
     tempActions.append(action) # 记录InitialAgent操作
+    env.envStates = states # 更新states
     # 如果系统出错
     if done:
         reward = -1000
@@ -64,9 +63,10 @@ while True:
     for eachAgent in processAgents:
         state = toProcessAgentState(env, eachAgent)
         action = eachAgent.SelectActionRandom(state)
-        done = env.processStep(eachAgent, action)
+        states, done = env.processStep(eachAgent, action)
         reward = -env.count
         tempActions.append(action)
+        env.envStates = states
         if done:
             reward = -1000
             print("Decision failure, task failure")
@@ -78,24 +78,34 @@ while True:
     # ===========FinalAgent操作===========
     state = toFinalAgentState(env,agent2,agent3,agent4,agent5)
     action = agent5.SelectActionRandom(state)
-    done = env.finalStep(agent5, action, agent2, agent3, agent4)
+    states, done = env.finalStep(agent5, action, agent2, agent3, agent4)
     reward = -env.count
     tempActions.append(action)
+    env.envStates = states
     if done:
         reward = -1000
         print("Decision failure, task failure")
         break
         
-    # 记录下每t时刻, 整个系统的的states和actions
-    env.recordState()
-    recordActions.append(tempActions)
-    # recordActions存入txt文件
-    # 待写
+    # =================显示=================
+    print("===================")
+    print("count:")
+    print(env.count)
+    print("------state------")
+    for each in env.envStates:
+        print(each)
+    print("------action------")
+    for each in tempActions:
+        print(each)
+    # =================显示=================
     
-    gui.plotGantGraph(env.envStates, env.count) # 数据写入ui
+    # 记录下每t时刻, 整个系统的的states和actions
+    recordStates.append(str(states))
+    recordActions.append(str(tempActions))
     
     if env.ifTaskFinish() == 1:
         break
 
-gui.show()
-sys.exit(app.exec_())
+# 保存数据
+writeData(recordStates, recordActions)
+

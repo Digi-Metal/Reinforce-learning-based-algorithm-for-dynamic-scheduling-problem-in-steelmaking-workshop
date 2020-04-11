@@ -28,7 +28,6 @@ class Env:
         
         # 记录实时states和累计states
         self.envStates = []
-        self.recordStates = []
         
         # 定义task
         self.taskType = 3
@@ -65,11 +64,7 @@ class Env:
         elif taskType == 3:
             return self.schedulingSystem.transpotTime(self.schedulingSystem.process4.transpotArray, m, n)
     
-    # 记录当前的states
-    def recordState(self):
-        temp = self.envStates
-        self.recordStates.append(temp)
-        
+    
     '''
     定义initialStep的States规则:
     原料列表: 值表示还剩下多少任务没有开工
@@ -84,9 +79,10 @@ class Env:
     # 输入action, 更改envStates, done表示系统是否出错
     def initialStep(self, agent, action):
         done = 0
+        envStates = self.envStates
         # 原料的state与本agent的state变化
-        material = self.envStates[0]
-        state = self.envStates[agent.processNum+1]
+        material = envStates[0]
+        state = envStates[agent.processNum+1]
         
         # 对每一个设备分析情况
         for each in range(agent.machineNum):
@@ -117,10 +113,10 @@ class Env:
                         temp = state[each][1]
                         state[each] = [3, temp]
         
-        self.envStates[0] = material
-        self.envStates[agent.processNum+1] = state
+        envStates[0] = material
+        envStates[agent.processNum+1] = state
         
-        return done
+        return envStates, done
         
     '''
     定义processStep的States规则:
@@ -137,9 +133,10 @@ class Env:
     # 输入action, 更改envStates, done表示系统是否出错
     def processStep(self, agent, action):
         done = 0
+        envStates = self.envStates
         # 上一个agent的state与本agent的state变化
-        lastState = self.envStates[agent.processNum]
-        state = self.envStates[agent.processNum+1]
+        lastState = envStates[agent.processNum]
+        state = envStates[agent.processNum+1]
         
         # 对每一个设备分析情况
         for each in range(agent.machineNum):
@@ -193,10 +190,10 @@ class Env:
                         temp = self.runTime(state[each][1],agent.processNum,each)
                         state[each] = [1, state[each][1], temp, 0]
         
-        self.envStates[agent.processNum] = lastState
-        self.envStates[agent.processNum+1] = state
+        envStates[agent.processNum] = lastState
+        envStates[agent.processNum+1] = state
         
-        return done
+        return envStates, done
         
     '''
     定义finalStep的States规则:
@@ -204,10 +201,11 @@ class Env:
     '''
     def finalStep(self, agent, action, agent2, agent3, agent4):
         done = 0
-        agent2State = self.envStates[agent.processNum-2]
-        agent3State = self.envStates[agent.processNum-1]
-        agent4State = self.envStates[agent.processNum]
-        state = self.envStates[agent.processNum+1]
+        envStates = self.envStates
+        agent2State = envStates[agent.processNum-2]
+        agent3State = envStates[agent.processNum-1]
+        agent4State = envStates[agent.processNum]
+        state = envStates[agent.processNum+1]
         
         # 对每一个设备分析情况
         for each in range(agent.machineNum):
@@ -276,10 +274,12 @@ class Env:
                         temp = self.runTime(state[each][1],agent.processNum,each)
                         state[each] = [1, state[each][1], temp, 0]
         
-        self.envStates[agent.processNum-2] = agent2State
-        self.envStates[agent.processNum-1] = agent3State
-        self.envStates[agent.processNum] = agent4State
-        self.envStates[agent.processNum+1] = state
+        envStates[agent.processNum-2] = agent2State
+        envStates[agent.processNum-1] = agent3State
+        envStates[agent.processNum] = agent4State
+        envStates[agent.processNum+1] = state
+        
+        return envStates, done
         
     # 重置时间与状态
     def reset(self):

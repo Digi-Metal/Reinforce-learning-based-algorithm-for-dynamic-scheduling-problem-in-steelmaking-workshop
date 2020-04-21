@@ -29,7 +29,7 @@ num_episodes = 1000     # 训练时走几次
 num_steps = 200     # 训练时一次走几步
 test_iteration = 10     # 测试时走几次
 num_test_steps = 200    # 测试时一次走几步
-mode = 'train'      # train or test
+mode = 'test'      # train or test
 
 retrain = True        # 是否重头训练
 weight_num = 900        # 载入权重的代数,用于中途继续训练和test情况
@@ -62,6 +62,8 @@ if mode == 'train':
         for t in range(num_steps):
             # 选action
             action = agent.select_action(state)
+            print(action)
+            print(type(action))
             
             # add noise to action
             action = (action + np.random.normal(0, exploration_noise, size=env.action_space.shape[0])).clip(
@@ -99,6 +101,7 @@ elif mode == 'test':
         state = env.reset()
         for t in range(num_test_steps):
             action = agent.select_action(state)
+            
             next_state, reward, done, _ = env.step(np.float32(action))
             env.render()
             state = next_state

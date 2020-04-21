@@ -73,7 +73,7 @@ if mode == 'train':
             # 选action
             action, log_prob, entropy = agent.select_action(state)
             action = action.cpu()
-
+            
             # 环境反馈
             # done:是否重新reset环境,大多游戏分为多个环节(episode),当done=true的时候,表示这个环节结束了
             next_state, reward, done, _ = env.step(action.numpy()[0])
@@ -113,6 +113,7 @@ elif mode == 'test':
             # 选action
             action, log_prob, entropy = agent.select_action(state)
             action = action.cpu()
+            
             # 环境反馈
             next_state, reward, done, _ = env.step(action.numpy()[0])
             # UI显示

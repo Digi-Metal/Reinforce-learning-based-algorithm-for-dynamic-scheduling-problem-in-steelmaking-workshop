@@ -64,6 +64,23 @@ def toFinalAgentState(env,agent2,agent3,agent4,agent5):
             state.append(1)
     return state
 
+# 环境的state转换成last agent的state
+def toLastAgentState(env, agent):
+    state = []
+    # last agent
+    for each in env.envStates[agent.lastProcessNum+1]:
+        if each[0] == 3 and each[-1] == (agent.lastProcessNum-1):
+            state.append(each[-1])
+        else:
+            state.append(0)
+    # this agent
+    for each in env.envStates[agent.processNum+1]:
+        if each[0] == 0:
+            state.append(0)
+        else:
+            state.append(1)
+    return state
+
 '''
 recordState和recordActions存入txt文件
 文件名: 用当前时间来命名

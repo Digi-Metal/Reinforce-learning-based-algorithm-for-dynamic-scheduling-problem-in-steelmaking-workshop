@@ -64,6 +64,14 @@ class Env:
         elif taskType == 3:
             return self.schedulingSystem.transpotTime(self.schedulingSystem.process4.transpotArray, m, n)
     
+    # 辅助程序
+    def transTimeLast(self, lastProcessNum, m, n):
+        if lastProcessNum == 2:
+            return self.task1.dealTime(self.task1.transport2To5, m, n)
+        elif lastProcessNum == 3:
+            return self.task2.dealTime(self.task2.transport3To5, m, n)
+        elif lastProcessNum == 4:
+            return self.schedulingSystem.transpotTime(self.schedulingSystem.process4.transpotArray, m, n)
     
     '''
     定义initialStep的States规则:
@@ -190,6 +198,75 @@ class Env:
                         temp = self.runTime(state[each][1],agent.processNum,each)
                         state[each] = [1, state[each][1], temp, 0]
         
+        envStates[agent.processNum] = lastState
+        envStates[agent.processNum+1] = state
+        
+        return envStates, done
+        
+    # 输入action, 更改envStates, done表示系统是否出错
+    def lastStep(self, agent, action):
+        done = 0
+        envStates = self.envStates
+        # 上一个agent的state与本agent的state变化
+        lastState = envStates[agent.lastProcessNum+1]
+        state = envStates[agent.processNum+1]
+        
+        # 对每一个设备分析情况
+        for each in range(agent.machineNum):
+            # 设备为损坏或维护时
+            if state[each][0] == -1:
+                # 损坏或维护不能添加任务
+                if action[each] != 0:
+                    done = 1
+                    break
+            # lastMachine=3且设备为空闲时可以添加任务, lastMachine由占用状态变运输状态
+            elif state[each][0] == 0:
+                if action[each] != 0:
+                    if lastState[action[each]-1][0] == 3:
+                        # agent5只能选task1
+                        if agent.lastProcessNum == 2 and lastState[action[each]-1][-1] != 1:
+                            done = 1
+                            break
+                        # agent6只能选task2
+                        if agent.lastProcessNum == 3 and lastState[action[each]-1][-1] != 2:
+                            done = 1
+                            break
+                        # agent7只能选task3
+                        if agent.lastProcessNum == 3 and lastState[action[each]-1][-1] != 3:
+                            done = 1
+                            break
+                        temp = self.transTimeLast(agent.lastProcessNum,action[each]-1,each)
+                        state[each] = [2, lastState[action[each]-1][-1], action[each]-1, each, temp]
+                        lastState[action[each]-1] = [0]
+                    else:
+                        done = 1
+                        break
+            # 设备为工作时
+            elif state[each][0] == 1:
+                # 工作时不能添加任务
+                if action[each] != 0:
+                        done = 1
+                        break
+                else:
+                    # 已有工作减1单位剩余时间
+                    state[each][2] -= 1
+                    # 工作完成时变成占用
+                    if state[each][2] == 0:
+                        temp = state[each][1]
+                        state[each] = [3, temp]
+            # 设备为运输时不能选动作
+            elif state[each][0] == 2:
+                if action[each] != 0:
+                    done = 1
+                    break
+                # 运输时间减1
+                else:
+                    state[each][-1] -= 1
+                    # 运输到目的地转为工作状态
+                    if state[each][-1] == 0:
+                        temp = self.runTime(state[each][1],agent.processNum,each)
+                        state[each] = [1, state[each][1], temp, 0]
+                        
         envStates[agent.processNum] = lastState
         envStates[agent.processNum+1] = state
         

@@ -8,10 +8,11 @@ agents.py
 """
 
 import random
+from model.DDDPG import *
 
 # 进行决策的agent, 父类
 class VanillaAgent:
-    # 参数: 流程数, 设备数
+    # 参数: 属于第几流程, 设备数
     def __init__(self, processNum, machineNum):
         self.processNum = processNum
         self.machineNum = machineNum
@@ -34,10 +35,18 @@ action格式: list, 长度为machine数量(定值), 元素取值范围是0-task�
 '''
 class InitialAgent(VanillaAgent):
     # 新增加一个Task的种类数
-    def __init__(self, processNum, machineNum, taskNum):
+    def __init__(self, processNum, machineNum, taskNum, action_min, exploration_noise, capacity, device):
         super().__init__(processNum, machineNum)
         self.taskNum = taskNum
-    
+        self.capacity = capacity
+        
+        # RL算法
+        state_dim = machineNum + taskNum # 状态个数
+        action_dim = machineNum # 动作维度
+        action_num = taskNum + 1 # 每个动作供选择的个数
+        action_max = action_num
+        self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        
     # 随机算法决策
     def SelectActionRandom(self, state):
         stateFront = state[: self.taskNum]
@@ -76,10 +85,18 @@ action格式: list, 长度为machine数量(定值)
 '''
 class ProcessAgent(VanillaAgent):
     # 新增加一个Task的种类数
-    def __init__(self, processNum, machineNum, lastMachineNum):
+    def __init__(self, processNum, machineNum, lastMachineNum, action_min, exploration_noise, capacity, device):
         super().__init__(processNum, machineNum)
         self.lastMachineNum = lastMachineNum
-    
+        self.capacity = capacity
+        
+        # RL算法
+        state_dim = machineNum + lastMachineNum # 状态个数
+        action_dim = machineNum # 动作维度
+        action_num = lastMachineNum + 1 # 每个动作供选择的个数
+        action_max = action_num
+        self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        
     # 随机算法决策
     def SelectActionRandom(self, state):
         stateFront = state[: self.lastMachineNum]
@@ -179,8 +196,32 @@ class FinalAgent(VanillaAgent):
                 else:
                     action.append(0)
         return action
+
+
+'''
+state格式: list, 长度为上一个agent的machine数(定值)+本agent的machine数(定值)
+第一部分元素取值: 上一个agent的machine的状态, 0是其他情况, taskNum是种类为taskNum的job运行完成
+第二部分元素取值: 本agent的machine的状态, 0是空闲, 1是非空闲(工作中或工作结束但材料没运走或损坏)
+
+action格式: list, 长度为machine数量(定值)
+元素取值范围: 0+(lastAgent的Machine下标+1),
+表示选择lastAgent的Machine的材料进行加工(要求材料在lastAgent上已经完工), 0表示不动作
+'''
+class LastAgent(VanillaAgent):
+    # 新增加一个Task的种类数
+    def __init__(self, processNum, lastProcessNum, machineNum, lastMachineNum, action_min, exploration_noise, capacity, device):
+        super().__init__(processNum, machineNum)
+        self.lastMachineNum = lastMachineNum
+        self.lastProcessNum = lastProcessNum
+        self.capacity = capacity
         
-        
+        # RL算法
+        state_dim = machineNum + lastMachineNum # 状态个数
+        action_dim = machineNum # 动作维度
+        action_num = lastMachineNum + 1 # 每个动作供选择的个数
+        action_max = action_num
+        self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+
 
 # 测试程序
 def main():

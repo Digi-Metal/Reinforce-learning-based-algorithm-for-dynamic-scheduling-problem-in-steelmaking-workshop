@@ -6,7 +6,6 @@ test.py
 使用随机算法决策, 运行调度系统, 显示ui, 测试系统可行性
 """
 
-import copy
 from ui import *
 from utils import *
 from environment import *
@@ -88,15 +87,15 @@ while True:
         break
         
     # =================显示=================
-    print("===================")
-    print("count:")
-    print(env.count)
-    print("------state------")
-    for each in env.envStates:
-        print(each)
-    print("------action------")
-    for each in tempActions:
-        print(each)
+    #print("===================")
+    #print("count:")
+    #print(env.count)
+    #print("------state------")
+    #for each in env.envStates:
+    #    print(each)
+    #print("------action------")
+    #for each in tempActions:
+    #    print(each)
     # =================显示=================
     
     # 记录下每t时刻, 整个系统的的states和actions

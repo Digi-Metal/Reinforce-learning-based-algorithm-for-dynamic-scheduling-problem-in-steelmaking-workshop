@@ -1,7 +1,11 @@
 #-*- coding:utf-8 -*-
 
 """
-deep deterministic policy gradient
+deep deterministic discrete policy gradient
+
+与deep deterministic policy gradient的区别: 
+修改了Actor的forward函数的神经网络的最后一层, 改成softmax函数
+DDDPG的select_action函数, 对action进行向下取整以实现离散化
 """
 
 import random
@@ -43,20 +47,20 @@ class Replay_buffer():
 
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, max_action):
+    def __init__(self, state_dim, action_dim, action_num):
         super(Actor, self).__init__()
         
         self.l1 = nn.Linear(state_dim, 400)
         self.l2 = nn.Linear(400, 300)
         self.l3 = nn.Linear(300, action_dim)
         
-        self.max_action = max_action
+        self.action_num = action_num-0.1 # 减0.1, 后面向下取整的时候不会取到action_num
         
     def forward(self, x):
         x = F.relu(self.l1(x)) # 根据relu函数修改, 小于0的值变成0, 大于0的值不变
         x = F.relu(self.l2(x))
-        # 根据tanh函数修改(relu函数的平滑版本); tanh函数值域-1至1, 所以乘max_action将值域扩展为需要的值域
-        x = self.max_action * torch.tanh(self.l3(x))
+        # softmax值域0至1, 乘action_num将值域扩展为需要的值域; dim=1按列计算
+        x = self.action_num * F.softmax(self.l3(x), dim=1)
         return x
 
 
@@ -75,11 +79,16 @@ class Critic(nn.Module):
         return x
 
 
-class DDPG(object):
-    def __init__(self, state_dim, action_dim, max_action,capacity,device):
+class DDDPG(object):
+    def __init__(self, state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device):
+        self.action_dim = action_dim
+        self.action_min = action_min
+        self.action_max = action_max
         self.device = device
-        self.actor = Actor(state_dim, action_dim, max_action).to(self.device) # actor网络
-        self.actor_target = Actor(state_dim, action_dim, max_action).to(self.device) # actor_target网络
+        self.exploration_noise = exploration_noise
+        
+        self.actor = Actor(state_dim, action_dim, action_num).to(self.device) # actor网络
+        self.actor_target = Actor(state_dim, action_dim, action_num).to(self.device) # actor_target网络
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor_optimizer = optim.Adam(self.actor.parameters(), 1e-3) # 优化器
         
@@ -95,9 +104,16 @@ class DDPG(object):
         
     def select_action(self, state):
         # FloatTensor建立FloatTensor类型; reshape(1,-1)指无论多少行列, 都将其变成一行
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+        state = torch.FloatTensor(np.array(state).reshape(1, -1)).to(self.device)
         # cpu():提取CPU的data数据, numpy():tensor转numpy, flatten():降成一行
-        return self.actor(state).cpu().data.numpy().flatten()
+        action = self.actor(state).cpu().data.numpy().flatten()
+        
+        # 对每个action的元素 通过向下取整的方式 进行离散化
+        return action.astype(np.int)
+        
+    def add_action_noise(self, action):
+        action = (action + np.random.normal(0, self.exploration_noise, size=self.action_dim)).clip(self.action_min, self.action_max)
+        return action.astype(np.int)
         
     # update一次训练update_iteration批次, 每批次学习batch_size条数据, 即update一次学习(update_iteration*batch_size)条数据
     def update(self,tau=0.005,batch_size=64,update_iteration=10):
@@ -143,18 +159,18 @@ class DDPG(object):
             self.num_actor_update_iteration += 1
             self.num_critic_update_iteration += 1
 
-    def save(self, directory, i):
-        torch.save(self.actor.state_dict(), directory + str(i) + '_actor.pth')
-        torch.save(self.critic.state_dict(), directory + str(i) + '_critic.pth')
-        print("====================================")
-        print("Model has been saved...")
-        print("====================================")
+    def save(self, directory, name, i):
+        torch.save(self.actor.state_dict(), directory + name + '_' + str(i) + '_actor.pth')
+        torch.save(self.critic.state_dict(), directory + name + '_' + str(i) + '_critic.pth')
+        #print("====================================")
+        #print("Model has been saved...")
+        #print("====================================")
 
-    def load(self, directory, i):
-        self.actor.load_state_dict(torch.load(directory + str(i) + '_actor.pth'))
-        self.critic.load_state_dict(torch.load(directory + str(i) + '_critic.pth'))
-        print("====================================")
-        print("model has been loaded...")
-        print("====================================")
+    def load(self, directory, name, i):
+        self.actor.load_state_dict(torch.load(directory + name + '_' + str(i) + '_actor.pth'))
+        self.critic.load_state_dict(torch.load(directory + name + '_' + str(i) + '_critic.pth'))
+        #print("====================================")
+        #print("model has been loaded...")
+        #print("====================================")
 
 

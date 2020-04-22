@@ -87,6 +87,7 @@ class Env:
     # 输入action, 更改envStates, done表示系统是否出错
     def initialStep(self, agent, action):
         done = 0
+        reward = 0
         envStates = self.envStates
         # 原料的state与本agent的state变化
         material = envStates[0]
@@ -107,6 +108,7 @@ class Env:
                     temp = self.runTime(action[each],agent.processNum,each)
                     state[each] = [1, action[each], temp, 0]
                     material[action[each]-1] -= 1
+                    reward += -temp
             # 设备为工作时
             elif state[each][0] == 1:
                 # 工作时不能添加任务
@@ -124,7 +126,7 @@ class Env:
         envStates[0] = material
         envStates[agent.processNum+1] = state
         
-        return envStates, done
+        return envStates, reward, done
         
     '''
     定义processStep的States规则:
@@ -141,6 +143,7 @@ class Env:
     # 输入action, 更改envStates, done表示系统是否出错
     def processStep(self, agent, action):
         done = 0
+        reward = 0
         envStates = self.envStates
         # 上一个agent的state与本agent的state变化
         lastState = envStates[agent.processNum]
@@ -169,6 +172,7 @@ class Env:
                         temp = self.transTime(agent.processNum,action[each]-1,each)
                         state[each] = [2, lastState[action[each]-1][-1], action[each]-1, each, temp]
                         lastState[action[each]-1] = [0]
+                        reward += -temp-self.runTime(state[each][1],agent.processNum,each)
                     else:
                         done = 1
                         break
@@ -201,11 +205,12 @@ class Env:
         envStates[agent.processNum] = lastState
         envStates[agent.processNum+1] = state
         
-        return envStates, done
+        return envStates, reward, done
         
     # 输入action, 更改envStates, done表示系统是否出错
     def lastStep(self, agent, action):
         done = 0
+        reward = 0
         envStates = self.envStates
         # 上一个agent的state与本agent的state变化
         lastState = envStates[agent.lastProcessNum+1]
@@ -238,6 +243,7 @@ class Env:
                         temp = self.transTimeLast(agent.lastProcessNum,action[each]-1,each)
                         state[each] = [2, lastState[action[each]-1][-1], action[each]-1, each, temp]
                         lastState[action[each]-1] = [0]
+                        reward += -temp-self.runTime(state[each][1],agent.processNum,each)
                     else:
                         done = 1
                         break
@@ -267,10 +273,10 @@ class Env:
                         temp = self.runTime(state[each][1],agent.processNum,each)
                         state[each] = [1, state[each][1], temp, 0]
                         
-        envStates[agent.processNum] = lastState
+        envStates[agent.lastProcessNum+1] = lastState
         envStates[agent.processNum+1] = state
         
-        return envStates, done
+        return envStates, reward, done
         
     '''
     定义finalStep的States规则:

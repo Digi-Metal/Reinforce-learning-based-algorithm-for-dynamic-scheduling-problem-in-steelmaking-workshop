@@ -35,10 +35,11 @@ processAgents = [agent1, agent2, agent3, agent4]
 lastAgents = [agent5, agent6, agent7]
 agentsLs = [agent0, agent1, agent2, agent3, agent4, agent5, agent6, agent7]
 agentsName = ['agent0', 'agent1', 'agent2', 'agent3', 'agent4', 'agent5', 'agent6', 'agent7']
+ls_episode = [0, 0, 0, 0, 0, 0, 0, 0]
 
 
 # 参数
-num_episodes = 100000     # 训练多少次
+num_episodes = 1     # 训练多少次
 retrain = True        # 是否重头训练
 weight_num = 900        # 载入权重的代数,用于中途继续训练
 log_interval = 100       # 每隔log_interval保存一次参数
@@ -57,28 +58,55 @@ for i_episode in range(num_episodes):
     
     # 每次训练
     while True:
-        init_flag = 0
         env.count += 1
         
         # ===========InitialAgent操作===========
+        init_flag = 0
         state = toInitialAgentState(env) # 环境state转换成agent的state
-        action = agent0.rl.select_action(state) # 选择动作
-        action = agent0.rl.add_action_noise(action) # add noise to action
-        
-        # 环境反馈
-        states, done = env.initialStep(agent0, action)
-        next_state = toInitialAgentState(env)
-        reward = -1
-        
-        # 如果决策出错
-        if done:
-            init_flag = 1
-            reward = -10000
-            #print("Decision failure, task failure")
+        # InitialAgent是否要操作
+        if initialAgentChoose(agent0, state):
+            '''
+            password = input("按回车继续:")
+            print('agent num')
+            print(agent0.processNum)
+            print('state: ')
+            print(state)
+            print('envStates: ')
+            for each in env.envStates:
+                print(each)
+            '''
+            ls_episode[agent0.processNum] += 1
             
-        # 数据添加入replay_buffer
-        agent0.rl.replay_buffer.push((state, next_state, action, reward, np.float(done)))
-        rewards.append(reward) # 记录各步骤reward
+            action = agent0.rl.select_action(state) # 选择动作
+            action = agent0.rl.add_action_noise(action) # add noise to action
+            '''
+            print('action: ')
+            print(action)
+            '''
+            
+            # 环境反馈
+            states, reward, done = env.initialStep(agent0, action)
+            next_state = toInitialAgentState(env)
+            
+            # 如果决策出错
+            if done:
+                init_flag = 1
+                reward -= 1000
+                #print("Decision failure, task failure")
+                
+            # 数据添加入replay_buffer
+            agent0.rl.replay_buffer.push((state, next_state, action, reward, np.float(done)))
+            rewards.append(reward) # 记录各步骤reward
+            '''
+            print("reward")
+            print(reward)
+            print('envStates: ')
+            for each in env.envStates:
+                print(each)
+            '''
+        else:
+            action = [0]*agent0.machineNum
+            states, reward, done = env.initialStep(agent0, action)
         env.envStates = states # 更新states
         
         if init_flag == 1:
@@ -88,21 +116,51 @@ for i_episode in range(num_episodes):
         for eachAgent in processAgents:
             process_flag = 0
             state = toProcessAgentState(env, eachAgent)
-            action = eachAgent.rl.select_action(state)
-            action = eachAgent.rl.add_action_noise(action)
             
-            states, done = env.processStep(eachAgent, action)
-            next_state = toProcessAgentState(env, eachAgent)
-            reward = -1
-            
-            if done:
-                process_flag = 1
-                flag = 1
-                reward = -100000
-                #print("Decision failure, task failure")
-            
-            eachAgent.rl.replay_buffer.push((state, next_state, action, reward, np.float(done)))
-            rewards.append(reward)
+            # processAgent是否要操作
+            if processAgentChoose(eachAgent, state):
+                '''
+                password = input("按回车继续:")
+                print('agent num')
+                print(eachAgent.processNum)
+                print('state: ')
+                print(state)
+                print('envStates: ')
+                for each in env.envStates:
+                    print(each)
+                '''
+                
+                ls_episode[eachAgent.processNum] += 1
+                
+                action = eachAgent.rl.select_action(state)
+                action = eachAgent.rl.add_action_noise(action)
+                '''
+                print('action: ')
+                print(action)
+                '''
+                
+                states, reward, done = env.processStep(eachAgent, action)
+                next_state = toProcessAgentState(env, eachAgent)
+                reward = -1
+                
+                if done:
+                    process_flag = 1
+                    flag = 1
+                    reward -= 1000
+                    #print("Decision failure, task failure")
+                    
+                eachAgent.rl.replay_buffer.push((state, next_state, action, reward, np.float(done)))
+                rewards.append(reward)
+                '''
+                print("reward")
+                print(reward)
+                print('envStates: ')
+                for each in env.envStates:
+                    print(each)
+                '''
+            else:
+                action = [0]*eachAgent.machineNum
+                states, reward, done = env.processStep(eachAgent, action)
             env.envStates = states
             
             if process_flag == 1:
@@ -115,28 +173,58 @@ for i_episode in range(num_episodes):
         for eachAgent in lastAgents:
             last_flag = 0
             state = toLastAgentState(env, eachAgent)
-            action = eachAgent.rl.select_action(state)
-            action = eachAgent.rl.add_action_noise(action)
             
-            states, done = env.lastStep(eachAgent, action)
-            next_state = toLastAgentState(env, eachAgent)
-            reward = -1
+            # processAgent是否要操作
+            if processAgentChoose(eachAgent, state):
+                '''
+                password = input("按回车继续:")
+                print('agent num')
+                print(eachAgent.processNum)
+                print('state: ')
+                print(state)
+                print('envStates: ')
+                for each in env.envStates:
+                    print(each)
+                '''
             
-            if done:
-                last_flag = 1
-                flag = 1
-                reward = -100000
-                #print("Decision failure, task failure")
-            
-            eachAgent.rl.replay_buffer.push((state, next_state, action, reward, np.float(done)))
-            rewards.append(reward)
+                ls_episode[eachAgent.processNum] += 1
+                
+                action = eachAgent.rl.select_action(state)
+                action = eachAgent.rl.add_action_noise(action)
+                '''
+                print('action: ')
+                print(action)
+                '''
+                
+                states, reward, done = env.lastStep(eachAgent, action)
+                next_state = toLastAgentState(env, eachAgent)
+                reward = -1
+                
+                if done:
+                    last_flag = 1
+                    flag = 1
+                    reward -= 1000
+                    #print("Decision failure, task failure")
+                
+                eachAgent.rl.replay_buffer.push((state, next_state, action, reward, np.float(done)))
+                rewards.append(reward)
+                '''
+                print("reward")
+                print(reward)
+                print('envStates: ')
+                for each in env.envStates:
+                    print(each)
+                '''
+            else:
+                action = [0]*eachAgent.machineNum
+                states, reward, done = env.lastStep(eachAgent, action)
             env.envStates = states
             
             if last_flag == 1:
                 break
         if flag == 1:
             break
-        
+            
         # 调度系统正常完成
         if env.ifTaskFinish() == 1:
             print("Decision succeed")
@@ -149,9 +237,9 @@ for i_episode in range(num_episodes):
             each.rl.update()
             
     # save
-    if i_episode % log_interval == 0 and i_episode != 0:
-        for each in range(len(agentsLs)):
-            agentsLs[each].rl.save(directory, agentsName[each], i_episode)
+    for each in range(len(agentsName)):
+        if ls_episode[each] % log_interval == 0 and ls_episode[each] != 0:
+            agentsLs[each].rl.save(directory, agentsName[each], ls_episode[each])
             
     # 每隔几次输出一次信息
     if i_episode % print_log == 0 and i_episode != 0:

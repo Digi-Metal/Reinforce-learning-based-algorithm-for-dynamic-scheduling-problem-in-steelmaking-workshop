@@ -102,4 +102,25 @@ def writeData(recordStates, recordActions):
         for eachAction in recordActions:
             f.write(eachAction)
             f.write("\n")
-    
+
+# initialAgent是否需要进行动作
+def initialAgentChoose(agent, state):
+    stateFront = state[: agent.taskNum]
+    machineState = state[agent.taskNum :]
+    if sum(stateFront) == 0:
+        return 0
+    elif sum(machineState) == agent.machineNum:
+        return 0
+    else:
+        return 1
+
+# processAgent是否需要进行动作
+def processAgentChoose(agent, state):
+    stateFront = state[: agent.lastMachineNum]
+    machineState = state[agent.lastMachineNum :]
+    if sum(stateFront) == 0:
+        return 0
+    elif sum(machineState) == agent.machineNum:
+        return 0
+    else:
+        return 1

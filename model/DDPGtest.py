@@ -25,11 +25,11 @@ action_dim = env.action_space.shape[0] # 动作个数
 max_action = float(env.action_space.high[0]) # 动作最大值
 
 # 其它参数
-num_episodes = 1000     # 训练时走几次
-num_steps = 200     # 训练时一次走几步
+num_episodes = 1     # 训练时走几次
+num_steps = 2     # 训练时一次走几步
 test_iteration = 10     # 测试时走几次
 num_test_steps = 200    # 测试时一次走几步
-mode = 'test'      # train or test
+mode = 'train'      # train or test
 
 retrain = True        # 是否重头训练
 weight_num = 900        # 载入权重的代数,用于中途继续训练和test情况
@@ -62,8 +62,6 @@ if mode == 'train':
         for t in range(num_steps):
             # 选action
             action = agent.select_action(state)
-            print(action)
-            print(type(action))
             
             # add noise to action
             action = (action + np.random.normal(0, exploration_noise, size=env.action_space.shape[0])).clip(
@@ -73,7 +71,10 @@ if mode == 'train':
             next_state, reward, done, info = env.step(action)
             rewards.append(reward)
             agent.replay_buffer.push((state, next_state, action, reward, np.float(done)))
-            
+            '''
+            for each in agent.replay_buffer.storage:
+                print(each)
+            '''
             # 更新state
             state = next_state
             if done:

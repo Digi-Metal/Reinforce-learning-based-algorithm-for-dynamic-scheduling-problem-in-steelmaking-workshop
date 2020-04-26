@@ -8,7 +8,8 @@ agents.py
 """
 
 import random
-from model.DDDPG import *
+#from model.DDDPG import *
+from model.PG import *
 
 # 进行决策的agent, 父类
 class VanillaAgent:
@@ -41,11 +42,25 @@ class InitialAgent(VanillaAgent):
         self.capacity = capacity
         
         # RL算法
-        state_dim = machineNum + taskNum # 状态个数
+        '''
+        state_dim = machineNum + taskNum # 状态维度
         action_dim = machineNum # 动作维度
         action_num = taskNum + 1 # 每个动作供选择的个数
         action_max = action_num
-        self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        
+        state_dim = 3 # 状态维度
+        action_dim = 1 # 动作维度
+        action_num = 2 # 每个动作供选择的个数
+        action_max = 1
+        '''
+        
+        state_dim = machineNum + 2 # 状态维度
+        action_dim = 1 # 动作维度
+        action_num = machineNum # 每个动作供选择的个数
+        action_max = action_num
+        
+        #self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        self.rl = PolicyGradient(state_dim, 400, action_num, device)
         
     # 随机算法决策
     def SelectActionRandom(self, state):
@@ -91,11 +106,23 @@ class ProcessAgent(VanillaAgent):
         self.capacity = capacity
         
         # RL算法
-        state_dim = machineNum + lastMachineNum # 状态个数
+        '''
+        state_dim = machineNum + lastMachineNum # 状态维度
         action_dim = machineNum # 动作维度
         action_num = lastMachineNum + 1 # 每个动作供选择的个数
         action_max = action_num
-        self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        
+        state_dim = 3 # 状态维度
+        action_dim = 1 # 动作维度
+        action_num = 2 # 每个动作供选择的个数
+        action_max = 1
+        '''
+        state_dim = machineNum + 2 # 状态维度
+        action_dim = 1 # 动作维度
+        action_num = machineNum + 1 # 每个动作供选择的个数
+        action_max = action_num
+        #self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        self.rl = PolicyGradient(state_dim, 400, action_num, device)
         
     # 随机算法决策
     def SelectActionRandom(self, state):
@@ -216,12 +243,23 @@ class LastAgent(VanillaAgent):
         self.capacity = capacity
         
         # RL算法
+        '''
         state_dim = machineNum + lastMachineNum # 状态个数
         action_dim = machineNum # 动作维度
         action_num = lastMachineNum + 1 # 每个动作供选择的个数
         action_max = action_num
-        self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
-
+        
+        state_dim = 3 # 状态维度
+        action_dim = 1 # 动作维度
+        action_num = 2 # 每个动作供选择的个数
+        action_max = 1
+        '''
+        state_dim = machineNum + 2 # 状态维度
+        action_dim = 1 # 动作维度
+        action_num = machineNum + 1 # 每个动作供选择的个数
+        action_max = action_num
+        #self.rl = DDDPG(state_dim, action_dim, action_num, action_min, action_max, exploration_noise, capacity, device)
+        self.rl = PolicyGradient(state_dim, 400, action_num, device)
 
 # 测试程序
 def main():

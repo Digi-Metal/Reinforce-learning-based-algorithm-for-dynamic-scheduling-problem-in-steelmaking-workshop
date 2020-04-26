@@ -124,3 +124,37 @@ def processAgentChoose(agent, state):
         return 0
     else:
         return 1
+
+# initialAgent全局state转局部state
+def allStateToPartStateInit(taskLoc, macLoc):
+    s = []
+    s.append(taskLoc)
+    s.append(taskLoc+1)
+    s.append(macLoc)
+    return s
+
+# Agent全局state转局部state
+def allStateToPartState(state, taskLoc, macLoc):
+    s = []
+    s.append(taskLoc)
+    s.append(state[taskLoc])
+    s.append(macLoc)
+    return s
+
+# initialAgent局部action转成全局action
+def partActionToAllActionInit(machineNum, eachMac, action):
+    actionAll = []
+    for i in range(machineNum):
+        actionAll.append(0)
+    actionAll[eachMac] = action[0]
+    
+    return actionAll
+
+def allSToPartSInit(state, taskLoc, agentLastNum):
+    s = []
+    s.append(state[taskLoc])
+    s.append(taskLoc+1)
+    s += state[agentLastNum:]
+    
+    return s
+

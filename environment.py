@@ -34,7 +34,7 @@ class Env:
         self.task1 = Task()
         self.task2 = TaskTwo()
         self.task3 = TaskThree()
-    
+        
     # 辅助程序
     def runTime(self, taskType, m, n):
         if taskType == 1:
@@ -126,7 +126,17 @@ class Env:
         envStates[0] = material
         envStates[agent.processNum+1] = state
         
-        return envStates, reward, done
+        return envStates
+        
+    def initReturn(self, state, action):
+        if state[action[0]+1] == 0:
+            reward = -self.runTime(state[1],0,action[0]-1)
+            done = 0
+        else:
+            reward = -1000
+            done = 1
+            
+        return reward, done
         
     '''
     定义processStep的States规则:
@@ -205,7 +215,7 @@ class Env:
         envStates[agent.processNum] = lastState
         envStates[agent.processNum+1] = state
         
-        return envStates, reward, done
+        return envStates
         
     # 输入action, 更改envStates, done表示系统是否出错
     def lastStep(self, agent, action):
@@ -256,10 +266,10 @@ class Env:
                 else:
                     # 已有工作减1单位剩余时间
                     state[each][2] -= 1
-                    # 工作完成时变成占用
+                    # 工作完成时变成空闲
                     if state[each][2] == 0:
                         temp = state[each][1]
-                        state[each] = [3, temp]
+                        state[each] = [0]
             # 设备为运输时不能选动作
             elif state[each][0] == 2:
                 if action[each] != 0:

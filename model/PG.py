@@ -66,11 +66,11 @@ class PolicyGradient:
         #nn.utils.clip_grad_norm(self.model.parameters(), 40)
         self.optimizer.step()
         
-    def save(self, directory, i):
-        torch.save(self.model.state_dict(), directory + str(i) + '.pth')
-        print("====================================")
-        print("Model has been saved...")
-        print("====================================")
+    def save(self, directory, name, i):
+        torch.save(self.model.state_dict(), directory + name + '_' + str(i) + '.pth')
+        #print("====================================")
+        #print("Model has been saved...")
+        #print("====================================")
     
     def load(self, directory, i):
         self.model.load_state_dict(torch.load(directory + str(i) + '.pth'))
